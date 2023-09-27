@@ -255,6 +255,41 @@ void drawNormals(Mesh const &i_mesh) {
     }
 }
 
+struct Point {
+    float x;
+    float y;
+    float z;
+};
+
+Point* HermiteCubicCurve(Point P0, Point P1, Vec3 V0, Vec3 V1, long nbu) {
+
+    Point* res = new Point[nbu];
+
+    for(int i = 0; i < nbu; i++) {
+        double u = (double)i / (double)(nbu-1);
+        double u2 = u*u;
+        double u3 = u2*u;
+        res[i].x = (2*u3 - 3*u2 + 1)*P0.x + (-2*u3 + 3*u2)*P1.x + (u3 - 2*u2 + u)*V0[0] + (u3 - u2)*V1[0];
+        res[i].y = (2*u3 - 3*u2 + 1)*P0.y + (-2*u3 + 3*u2)*P1.y + (u3 - 2*u2 + u)*V0[1] + (u3 - u2)*V1[1];
+        res[i].z = (2*u3 - 3*u2 + 1)*P0.z + (-2*u3 + 3*u2)*P1.z + (u3 - 2*u2 + u)*V0[2] + (u3 - u2)*V1[2];
+    }
+    
+    return res;
+
+}
+Point* BezierCurveByBernstein(Point* TabControlPoint, long nbControlPoint, long nbU){
+    
+}
+
+void drawCurve(Point* curvePoints, long nbPoints) {
+    glBegin(GL_LINE_STRIP);
+    glColor3f(0.5,0.5,0.5);
+    for(int i = 0; i < nbPoints; i++) {
+        glVertex3f(curvePoints[i].x, curvePoints[i].y, curvePoints[i].z);
+    }
+    glEnd();
+}
+
 //Draw fonction
 void draw() {
 
@@ -275,12 +310,35 @@ void draw() {
     }
 
     if (display_mesh) {
-        glColor3f(0.8, 1, 0.8);
-        drawMesh(mesh);
+        int NbP=10;
+        Point P0;
+        P0.x=0.f;
+        P0.y=0.f;
+        P0.z=0.f;
+        Point P1;
+        P1.x=2.f;
+        P1.y=0.f;
+        P1.z=0.f;
+        Vec3 V0=Vec3(1,1,0);
+        Vec3 V1=Vec3(1,-1,0);
+        drawCurve(HermiteCubicCurve(P0,P1,V0,V1, NbP),NbP);
     }
     if (display_transformed_mesh) {
-        glColor3f(0.8, 0.8, 1);
-        drawMesh(transformed_mesh);
+        glBegin(GL_LINE_STRIP);
+        glColor3f(1, 0, 0);
+        glVertex3f(0,0,0);
+        glVertex3f(10,0,0);
+        glEnd();
+        glBegin(GL_LINE_STRIP);
+        glColor3f(0, 1, 0);
+        glVertex3f(0,0,0);
+        glVertex3f(0,10,0);
+        glEnd();
+        glBegin(GL_LINE_STRIP);
+        glColor3f(0, 0, 1);
+        glVertex3f(0,0,0);
+        glVertex3f(0,0,10);
+        glEnd();
     }
 
     if (displayMode == SOLID || displayMode == LIGHTED_WIRE) {
