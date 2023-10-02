@@ -32,6 +32,8 @@
 #include "src/Camera.h"
 
 
+long NbP=50;
+
 enum DisplayMode {
     WIRE = 0, SOLID = 1, LIGHTED_WIRE = 2, LIGHTED = 3
 };
@@ -383,7 +385,6 @@ void draw() {
         Vec3 V1=Vec3(1,-1,0);
         drawCurve(HermiteCubicCurve(P0,P1,V0,V1, NbP),NbP);
         */
-        long NbP=10;
         long NbPC=6;
         Point P[NbPC];
         P[0].x=0.f;
@@ -492,6 +493,12 @@ void idle() {
 //Keyboard event
 void key(unsigned char keyPressed, int x, int y) {
     switch (keyPressed) {
+    case '+':
+        NbP++;
+        break;
+    case '-':
+        if (NbP>5)NbP--;
+        break;
     case 'f':
         if (fullScreen == true) {
             glutReshapeWindow(SCREENWIDTH, SCREENHEIGHT);
