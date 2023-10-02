@@ -277,9 +277,68 @@ Point* HermiteCubicCurve(Point P0, Point P1, Vec3 V0, Vec3 V1, long nbu) {
     return res;
 
 }
-Point* BezierCurveByBernstein(Point* TabControlPoint, long nbControlPoint, long nbU){
-    
+
+long fact(long n){
+    long f = 1;
+    for (n; n>0;--n){
+        f*=n;
+    }
+    return f;
 }
+
+Point* BezierCurveBernstein(Point* controlPoints, long nbControlPoints, long nbu) {
+
+    Point* res = new Point[nbu];
+
+    long degre = nbControlPoints - 1;
+
+    for(int i = 0; i < nbu; i++) {
+        double u = (double)i / (double)(nbu-1);
+        for(int j = 0; j <= degre; j++) {
+            double polynome = ((double)fact(degre)/(float)(fact(j)*(fact(degre-j)))) * pow(u,j) * pow((1-u),degre-j);
+            res[i].x += polynome * controlPoints[j].x;
+            res[i].y += polynome * controlPoints[j].y;
+            res[i].z += polynome * controlPoints[j].z;
+        }
+    }
+
+    return res;
+
+}
+/*
+Point* BezierCurveDeCasteljau(Point* controlPoints, long nbControlPoints, long nbu) {
+
+    Point* res = new Point[nbu];
+    
+    
+
+    for(int i = 0; i < nbu; i++) {
+        double u = (double)i / (double)(nbu - 1);
+        
+        Point* Q = new Point[nbControlPoints]; // On repart du tableau de points de contrôle de base
+            for(int j = 0; j < nbControlPoints; j++) {
+                Q[j] = controlPoints[j];
+            }
+
+        // De Casteljau
+        for(int k = 1; k < nbControlPoints; k++) {
+            for(int j = 0; j < nbControlPoints - k; j++) {
+                drawLine(Q[j],Q[j+1]);
+                Q[j].x = (1 - u) * Q[j].x + u * Q[j + 1].x;
+                Q[j].y = (1 - u) * Q[j].y + u * Q[j + 1].y;
+                Q[j].z = (1 - u) * Q[j].z + u * Q[j + 1].z;
+                drawPoint(Q[j]);
+            }
+        }
+        res[i] = Q[0];
+        drawPoint(Q[0]);
+        
+    }
+
+    return res;
+
+}
+*/
 
 void drawCurve(Point* curvePoints, long nbPoints) {
     glBegin(GL_LINE_STRIP);
@@ -310,6 +369,7 @@ void draw() {
     }
 
     if (display_mesh) {
+        /*
         int NbP=10;
         Point P0;
         P0.x=0.f;
@@ -322,6 +382,34 @@ void draw() {
         Vec3 V0=Vec3(1,1,0);
         Vec3 V1=Vec3(1,-1,0);
         drawCurve(HermiteCubicCurve(P0,P1,V0,V1, NbP),NbP);
+        */
+        long NbP=10;
+        long NbPC=6;
+        Point P[NbPC];
+        P[0].x=0.f;
+        P[0].y=0.f;
+        P[0].z=0.f;
+
+        P[1].x=0.5;
+        P[1].y=3.f;
+        P[1].z=0.f;
+
+        P[2].x=1.f;
+        P[2].y=1.f;
+        P[2].z=0.f;
+
+        P[3].x=1.5;
+        P[3].y=-5.f;
+        P[3].z=0.f;
+
+        P[4].x=1.75;
+        P[4].y=5.f;
+        P[4].z=0.f;
+
+        P[5].x=2.f;
+        P[5].y=0.f;
+        P[5].z=0.f;
+        drawCurve(BezierCurveBernstein(P, NbPC ,NbP), NbP);
     }
     if (display_transformed_mesh) {
         glBegin(GL_LINE_STRIP);
