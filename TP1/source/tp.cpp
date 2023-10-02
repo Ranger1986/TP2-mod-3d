@@ -32,7 +32,7 @@
 #include "src/Camera.h"
 
 
-long NbP=50;
+long NbP=10;
 
 enum DisplayMode {
     WIRE = 0, SOLID = 1, LIGHTED_WIRE = 2, LIGHTED = 3
@@ -280,6 +280,7 @@ Point* HermiteCubicCurve(Point P0, Point P1, Vec3 V0, Vec3 V1, long nbu) {
 
 }
 
+
 long fact(long n){
     long f = 1;
     for (n; n>0;--n){
@@ -287,60 +288,25 @@ long fact(long n){
     }
     return f;
 }
-
-Point* BezierCurveBernstein(Point* controlPoints, long nbControlPoints, long nbu) {
+Point* BezierCurveBernstein(Point* ctrlPts, long nbctrlPts, long nbu) {
 
     Point* res = new Point[nbu];
 
-    long degre = nbControlPoints - 1;
+    long deg = nbctrlPts - 1;
 
     for(int i = 0; i < nbu; i++) {
         double u = (double)i / (double)(nbu-1);
-        for(int j = 0; j <= degre; j++) {
-            double polynome = ((double)fact(degre)/(float)(fact(j)*(fact(degre-j)))) * pow(u,j) * pow((1-u),degre-j);
-            res[i].x += polynome * controlPoints[j].x;
-            res[i].y += polynome * controlPoints[j].y;
-            res[i].z += polynome * controlPoints[j].z;
+        for(int j = 0; j <= deg; j++) {
+            double polynome = ((double)fact(deg)/(float)(fact(j)*(fact(deg-j)))) * pow(u,j) * pow((1-u),deg-j);
+            res[i].x += polynome * ctrlPts[j].x;
+            res[i].y += polynome * ctrlPts[j].y;
+            res[i].z += polynome * ctrlPts[j].z;
         }
     }
 
     return res;
 
 }
-/*
-Point* BezierCurveDeCasteljau(Point* controlPoints, long nbControlPoints, long nbu) {
-
-    Point* res = new Point[nbu];
-    
-    
-
-    for(int i = 0; i < nbu; i++) {
-        double u = (double)i / (double)(nbu - 1);
-        
-        Point* Q = new Point[nbControlPoints]; // On repart du tableau de points de contrôle de base
-            for(int j = 0; j < nbControlPoints; j++) {
-                Q[j] = controlPoints[j];
-            }
-
-        // De Casteljau
-        for(int k = 1; k < nbControlPoints; k++) {
-            for(int j = 0; j < nbControlPoints - k; j++) {
-                drawLine(Q[j],Q[j+1]);
-                Q[j].x = (1 - u) * Q[j].x + u * Q[j + 1].x;
-                Q[j].y = (1 - u) * Q[j].y + u * Q[j + 1].y;
-                Q[j].z = (1 - u) * Q[j].z + u * Q[j + 1].z;
-                drawPoint(Q[j]);
-            }
-        }
-        res[i] = Q[0];
-        drawPoint(Q[0]);
-        
-    }
-
-    return res;
-
-}
-*/
 
 void drawCurve(Point* curvePoints, long nbPoints) {
     glBegin(GL_LINE_STRIP);
@@ -350,6 +316,58 @@ void drawCurve(Point* curvePoints, long nbPoints) {
     }
     glEnd();
 }
+void drawLine(Point A, Point B, float* c){
+    glBegin(GL_LINE_STRIP);
+    glColor4f(c[0],c[1],c[2],0.5);
+    glVertex3f(A.x,A.y,A.z);
+    glVertex3f(B.x,B.y,B.z);
+    glEnd();
+}
+void drawPoint(Point A, float* c){
+    glBegin(GL_POINTS);
+    glColor3f(c[0],c[1],c[2]);
+    glVertex3f(A.x,A.y,A.z);
+    glEnd();
+}
+Point* BezierCurveDeCasteljau(Point* ctrlPts, long nbctrlPts, long nbu) {
+
+    Point* res = new Point[nbu];
+    float blue[3];
+    blue[0]=0;
+    blue[1]=0.1;
+    blue[2]=0.5;
+    float red[3];
+    red[0]=1;
+    red[1]=0;
+    red[2]=0;
+    
+
+    for(int i = 0; i < nbu; i++) {
+        double u = (double)i / (double)(nbu - 1);
+        
+        Point* Q = new Point[nbctrlPts]; // On repart du tableau de points de contrôle de base
+            for(int j = 0; j < nbctrlPts; j++) {
+                Q[j] = ctrlPts[j];
+            }
+
+        // De Casteljau
+        for(int k = 1; k < nbctrlPts; k++) {
+            for(int j = 0; j < nbctrlPts - k; j++) {
+                drawLine(Q[j],Q[j+1], blue);
+                Q[j].x = (1 - u) * Q[j].x + u * Q[j + 1].x;
+                Q[j].y = (1 - u) * Q[j].y + u * Q[j + 1].y;
+                Q[j].z = (1 - u) * Q[j].z + u * Q[j + 1].z;
+                drawPoint(Q[j],red);
+            }
+        }
+        res[i] = Q[0];
+        
+    }
+
+    return res;
+
+}
+
 
 //Draw fonction
 void draw() {
@@ -410,7 +428,8 @@ void draw() {
         P[5].x=2.f;
         P[5].y=0.f;
         P[5].z=0.f;
-        drawCurve(BezierCurveBernstein(P, NbPC ,NbP), NbP);
+        
+        drawCurve(BezierCurveDeCasteljau(P, NbPC ,NbP), NbP);
     }
     if (display_transformed_mesh) {
         glBegin(GL_LINE_STRIP);
@@ -497,7 +516,7 @@ void key(unsigned char keyPressed, int x, int y) {
         NbP++;
         break;
     case '-':
-        if (NbP>5)NbP--;
+        if (NbP>6)NbP--;
         break;
     case 'f':
         if (fullScreen == true) {
