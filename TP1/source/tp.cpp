@@ -316,6 +316,34 @@ void drawCurve(Point* curvePoints, long nbPoints) {
     }
     glEnd();
 }
+/*
+void drawQuad(Point* Points, long v, long u) {
+    for (int i = 0; i<u+2; ++i){
+        for (int j = 0; j<v+2; ++j){
+            glBegin(GL_QUADS);
+            glColor3f(0.5,0.5,0.5);
+            Point P;
+            P.x= Points[i*v+j].x;
+            P.y= Points[i*v+j].y;
+            P.z= Points[i*v+j].z;
+            glVertex3f(P.x, P.y, P.z);
+            P.x= Points[i*v+j+1].x;
+            P.y= Points[i*v+j+1].y;
+            P.z= Points[i*v+j+1].z;
+            glVertex3f(P.x, P.y, P.z);
+            P.x= Points[(i+1)*v+j].x;
+            P.y= Points[(i+1)*v+j].y;
+            P.z= Points[(i+1)*v+j].z;
+            glVertex3f(P.x, P.y, P.z);
+            P.x= Points[(i+1)*v+j+1].x;
+            P.y= Points[(i+1)*v+j+1].y;
+            P.z= Points[(i+1)*v+j+1].z;
+            glVertex3f(P.x, P.y, P.z);
+            glEnd();
+        }
+    }
+}
+*/
 void drawLine(Point A, Point B, float* c){
     glBegin(GL_LINE_STRIP);
     glColor4f(c[0],c[1],c[2],0.5);
@@ -360,6 +388,17 @@ void drawSurfCyl(Point* A, int v, int u){
         droite[1].z=A[v*(u-1)+j].z;
         drawCurve(droite, 2);
     }
+}
+Point* calcSurfReg(Point* A, Point* B, int v, int u){
+    Point* res= new Point[u*v];
+    for (int i = 0; i<u; ++i){
+        for (int j = 0; j<v; ++j){
+            res[i*v+j].x= A[j].x * (1-j/v) + B[j].x * (i/u) ;
+            res[i*v+j].y= A[j].y * (1-j/v) + B[j].y * (i/u) ;
+            res[i*v+j].z= A[j].z * (1-j/v) + B[j].z * (i/u) ;
+        }
+    }
+    return res;
 }
 Point* BezierCurveDeCasteljau(Point* ctrlPts, long nbctrlPts, long nbu) {
 
@@ -421,29 +460,55 @@ void draw() {
 
         P[1].x=0.5;
         P[1].y=3.f;
-        P[1].z=0.f;
+        P[1].z=1.f;
 
         P[2].x=1.f;
         P[2].y=1.f;
-        P[2].z=0.f;
+        P[2].z=3.f;
 
         P[3].x=1.5;
         P[3].y=-5.f;
-        P[3].z=0.f;
+        P[3].z=2.f;
 
         P[4].x=1.75;
         P[4].y=5.f;
-        P[4].z=0.f;
+        P[4].z=1.f;
 
         P[5].x=2.f;
         P[5].y=0.f;
         P[5].z=0.f;
 
-        Vec3 dir1= Vec3(0.f,0.f,4.f);
+        Point P2[NbPC];
+        P2[0].x=2.f;
+        P2[0].y=2.f;
+        P2[0].z=2.f;
+
+        P2[1].x=1.5;
+        P2[1].y=2.f;
+        P2[1].z=-0.5;
+
+        P2[2].x=1.f;
+        P2[2].y=-1.f;
+        P2[2].z=3.f;
+
+        P2[3].x=1.5;
+        P2[3].y=-2.f;
+        P2[3].z=2.f;
+
+        P2[4].x=2.75;
+        P2[4].y=5.f;
+        P2[4].z=1.f;
+
+        P2[5].x=3.f;
+        P2[5].y=4.f;
+        P2[5].z=3.f;
+
+        Vec3 dir1= Vec3(-1.f,-1.f,4.f);
         
         Point* pt = BezierCurveDeCasteljau(P, NbPC ,NbP);
-        Point* listePts= calcSurfCyl(pt, NbP, 4,dir1);
-        //drawCurve(listePts, NbP);
+        Point* pt2 = BezierCurveDeCasteljau(P2, NbPC ,NbP);
+        Point* listePts= calcSurfReg(pt, pt2, NbP, 4);
+        //Point* listePts= calcSurfCyl(pt, NbP, 4, dir1);
         drawSurfCyl(listePts, NbP, 4);
 
     }
