@@ -329,17 +329,41 @@ void drawPoint(Point A, float* c){
     glVertex3f(A.x,A.y,A.z);
     glEnd();
 }
+Point* calcSurfCyl(Point* A, int v, int u, Vec3 d){
+    Point* res= new Point[u*v];
+    for (int i = 0; i<u; ++i){
+        for (int j = 0; j<v; ++j){
+            res[i*v+j].x= A[j].x + (d[0]*i/u);
+            res[i*v+j].y= A[j].y + (d[1]*i/u);
+            res[i*v+j].z= A[j].z + (d[2]*i/u);
+        }
+    }
+    return res;
+}
+void drawSurfCyl(Point* A, int v, int u){
+    for (int i = 0; i<u; ++i){
+        Point bez[v];
+        for (int j = 0; j<v; ++j){
+            bez[j].x=A[i*v+j].x;
+            bez[j].y=A[i*v+j].y;
+            bez[j].z=A[i*v+j].z;
+        }
+        drawCurve(bez, v);
+    }
+    for (int j = 0; j<v; ++j){
+        Point droite[2];
+        droite[0].x=A[j].x;
+        droite[0].y=A[j].y;
+        droite[0].z=A[j].z;
+        droite[1].x=A[v*(u-1)+j].x;
+        droite[1].y=A[v*(u-1)+j].y;
+        droite[1].z=A[v*(u-1)+j].z;
+        drawCurve(droite, 2);
+    }
+}
 Point* BezierCurveDeCasteljau(Point* ctrlPts, long nbctrlPts, long nbu) {
 
     Point* res = new Point[nbu];
-    float blue[3];
-    blue[0]=0;
-    blue[1]=0.1;
-    blue[2]=0.5;
-    float red[3];
-    red[0]=1;
-    red[1]=0;
-    red[2]=0;
     
 
     for(int i = 0; i < nbu; i++) {
@@ -353,11 +377,11 @@ Point* BezierCurveDeCasteljau(Point* ctrlPts, long nbctrlPts, long nbu) {
         // De Casteljau
         for(int k = 1; k < nbctrlPts; k++) {
             for(int j = 0; j < nbctrlPts - k; j++) {
-                drawLine(Q[j],Q[j+1], blue);
+                //drawLine(Q[j],Q[j+1], blue);
                 Q[j].x = (1 - u) * Q[j].x + u * Q[j + 1].x;
                 Q[j].y = (1 - u) * Q[j].y + u * Q[j + 1].y;
                 Q[j].z = (1 - u) * Q[j].z + u * Q[j + 1].z;
-                drawPoint(Q[j],red);
+                //drawPoint(Q[j],red);
             }
         }
         res[i] = Q[0];
@@ -389,20 +413,6 @@ void draw() {
     }
 
     if (display_mesh) {
-        /*
-        int NbP=10;
-        Point P0;
-        P0.x=0.f;
-        P0.y=0.f;
-        P0.z=0.f;
-        Point P1;
-        P1.x=2.f;
-        P1.y=0.f;
-        P1.z=0.f;
-        Vec3 V0=Vec3(1,1,0);
-        Vec3 V1=Vec3(1,-1,0);
-        drawCurve(HermiteCubicCurve(P0,P1,V0,V1, NbP),NbP);
-        */
         long NbPC=6;
         Point P[NbPC];
         P[0].x=0.f;
@@ -428,8 +438,14 @@ void draw() {
         P[5].x=2.f;
         P[5].y=0.f;
         P[5].z=0.f;
+
+        Vec3 dir1= Vec3(0.f,0.f,4.f);
         
-        drawCurve(BezierCurveDeCasteljau(P, NbPC ,NbP), NbP);
+        Point* pt = BezierCurveDeCasteljau(P, NbPC ,NbP);
+        Point* listePts= calcSurfCyl(pt, NbP, 4,dir1);
+        //drawCurve(listePts, NbP);
+        drawSurfCyl(listePts, NbP, 4);
+
     }
     if (display_transformed_mesh) {
         glBegin(GL_LINE_STRIP);
