@@ -32,7 +32,8 @@
 #include "src/Camera.h"
 
 
-long NbP=10;
+
+
 
 enum DisplayMode {
     WIRE = 0, SOLID = 1, LIGHTED_WIRE = 2, LIGHTED = 3
@@ -308,9 +309,9 @@ Point* BezierCurveBernstein(Point* ctrlPts, long nbctrlPts, long nbu) {
 
 }
 
-void drawCurve(Point* curvePoints, long nbPoints) {
+void drawCurve(Point* curvePoints, long nbPoints, float* c) {
     glBegin(GL_LINE_STRIP);
-    glColor3f(0.5,0.5,0.5);
+    glColor3f(c[0],c[1],c[2]);
     for(int i = 0; i < nbPoints; i++) {
         glVertex3f(curvePoints[i].x, curvePoints[i].y, curvePoints[i].z);
     }
@@ -368,7 +369,7 @@ Point* calcSurfCyl(Point* A, int v, int u, Vec3 d){
     }
     return res;
 }
-void drawSurfCyl(Point* A, int v, int u){
+void drawSurfCyl(Point* A, int v, int u, float* c){
     for (int i = 0; i<u; ++i){
         Point bez[v];
         for (int j = 0; j<v; ++j){
@@ -376,7 +377,7 @@ void drawSurfCyl(Point* A, int v, int u){
             bez[j].y=A[i*v+j].y;
             bez[j].z=A[i*v+j].z;
         }
-        drawCurve(bez, v);
+        drawCurve(bez, v, c);
     }
     for (int j = 0; j<v; ++j){
         Point droite[2];
@@ -386,10 +387,10 @@ void drawSurfCyl(Point* A, int v, int u){
         droite[1].x=A[v*(u-1)+j].x;
         droite[1].y=A[v*(u-1)+j].y;
         droite[1].z=A[v*(u-1)+j].z;
-        drawCurve(droite, 2);
+        drawCurve(droite, 2, c);
     }
 }
-void drawSurfReg(Point* A, int v, int u){
+void drawSurfReg(Point* A, int v, int u, float* c){
     for (int i = 0; i<u; ++i){
         Point bez[v];
         for (int j = 0; j<v; ++j){
@@ -397,7 +398,7 @@ void drawSurfReg(Point* A, int v, int u){
             bez[j].y=A[i*v+j].y;
             bez[j].z=A[i*v+j].z;
         }
-        drawCurve(bez, v);
+        drawCurve(bez, v, c);
     }
     for (int i = 0; i<v; ++i){
         Point bez[u];
@@ -406,7 +407,7 @@ void drawSurfReg(Point* A, int v, int u){
             bez[j].y=A[j*v+i].y;
             bez[j].z=A[j*v+i].z;
         }
-        drawCurve(bez, u);
+        drawCurve(bez, u, c);
     }    
     
 }
@@ -451,8 +452,55 @@ Point* BezierCurveDeCasteljau(Point* ctrlPts, long nbctrlPts, long nbu) {
     return res;
 
 }
+Point* calcSurfBez(Point* A, long v, long u, long newv, long newu){
+    Point* surface= new Point[newv*newu];
+    Point* BezierPrems = new Point[newv*u];
+    for (int i = 0; i < u; i++)
+    {
+        Point* ligne= new Point[v];
+        for (int j = 0; j < v; j++)
+        {
+            ligne[j]=A[i*v+j];
+        }
+        Point* B = BezierCurveDeCasteljau(ligne,v,newv);
+        for (int j = 0; j < newv; j++)
+        {
+            BezierPrems[i*newv+j]=B[j];
+        }
+    }
+    //float cB[]={0.5,0.5,0.f};
+    //drawSurfReg(BezierPrems,newv,u, cB);
+    for (int i = 0; i < newv; i++)
+    {
+        Point* ligne= new Point[u];
+        for (int j = 0; j < u; j++)
+        {
+            ligne[j]=BezierPrems[j*newv+i];
+        }
+        Point* B = BezierCurveDeCasteljau(ligne,u,newu);
+        for (int j = 0; j < newu; j++)
+        {
+            surface[j*newv+i]=B[j];
+        }
+    }
+    
+    return surface;
+}
+Point* genGrid(int u, int v){
+    Point* grid= new Point[u*v];
+    for (int i = 0; i < u; i++)
+    {
+        for (int j = 0; j < v; j++)
+        {
+            grid[i*5+j].x= rand() % 5 ;
+            grid[i*5+j].y= i;
+            grid[i*5+j].z= j;
+        }
+    }
+    return grid;
+}
 
-
+Point* grid = genGrid(5,5);
 //Draw fonction
 void draw() {
     glBegin(GL_LINE_STRIP);
@@ -470,7 +518,6 @@ void draw() {
     glVertex3f(0,0,0);
     glVertex3f(0,0,10);
     glEnd();
-
 
     long NbPC=6;
     Point P[NbPC];
@@ -524,12 +571,14 @@ void draw() {
     P2[5].z=5.f;
 
     Vec3 dir1= Vec3(0.f,0.f,0.f);
-    
-    Point* pt = BezierCurveDeCasteljau(P, 6 ,10);
+    Point* pt = BezierCurveBernstein(P, 6 ,10);
+
+    /*
     Point* pt2 = BezierCurveDeCasteljau(P2, 6 ,10);
     Point* listePtsR= calcSurfReg(pt, pt2, 10, 10);
     Point* listePts= calcSurfCyl(pt, 10, 2, dir1);
     Point* listePts2= calcSurfCyl(pt2, 10, 2, dir1);
+    */
 
     if (displayMode == LIGHTED || displayMode == LIGHTED_WIRE) {
 
@@ -548,12 +597,17 @@ void draw() {
     }
 
     if (display_mesh) {
+        float cR[]={0.5,0.5,0.5};
+        drawSurfReg(grid, 5, 5, cR);
+        /*
         drawSurfCyl(listePts, 10, 2);
         drawSurfCyl(listePts2, 10, 2);
-
+        */
     }
     if (display_transformed_mesh) {
-        drawSurfReg(listePtsR, 10, 10);
+        Point* otherGrid = calcSurfBez(grid, 5, 5, 50, 50);
+        float cB[]={0.5,0.5,0.f};
+        drawSurfReg(otherGrid, 50, 50, cB);
     }
 
     if (displayMode == SOLID || displayMode == LIGHTED_WIRE) {
