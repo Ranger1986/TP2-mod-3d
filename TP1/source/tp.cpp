@@ -64,8 +64,9 @@ Mesh transformed_mesh;
 
 bool display_normals;
 bool display_smooth_normals;
-bool display_mesh;
-bool display_transformed_mesh;
+bool display_surface_cylindrique;
+bool display_surface_reglee;
+bool display_surface_bezier;
 
 DisplayMode displayMode;
 // -------------------------------------------
@@ -115,8 +116,9 @@ void init() {
 
     display_normals = false;
     display_smooth_normals = false;
-    display_mesh = true;
-    display_transformed_mesh = true;
+    display_surface_cylindrique = false;
+    display_surface_reglee = false;
+    display_surface_bezier = true;
     displayMode = LIGHTED;
 
 }
@@ -570,8 +572,9 @@ void draw() {
     P2[5].y=0.f;
     P2[5].z=5.f;
 
-    Vec3 dir1= Vec3(0.f,0.f,0.f);
-    Point* pt = BezierCurveBernstein(P, 6 ,10);
+    Vec3 vecteur_directeur= Vec3(1.f,0.f,0.f);
+    Point* courbe_bezier1 = BezierCurveDeCasteljau(P, 6 ,10);
+    Point* courbe_bezier2 = BezierCurveDeCasteljau(P2, 6 ,10);
 
     /*
     Point* pt2 = BezierCurveDeCasteljau(P2, 6 ,10);
@@ -596,18 +599,27 @@ void draw() {
 
     }
 
-    if (display_mesh) {
-        float cR[]={0.5,0.5,0.5};
-        drawSurfReg(grid, 5, 5, cR);
-        /*
-        drawSurfCyl(listePts, 10, 2);
-        drawSurfCyl(listePts2, 10, 2);
-        */
+    if (display_surface_cylindrique) {
+        Point* surface_cylindrique1= calcSurfCyl(courbe_bezier1, 10, 10, vecteur_directeur);
+        float blanc[]={1.f,1.f,1.f};
+        float jaune[]={0.5,0.5,0.f};
+        drawCurve(courbe_bezier1, 10, blanc);
+        drawSurfReg(surface_cylindrique1, 10, 10, jaune);
     }
-    if (display_transformed_mesh) {
-        Point* otherGrid = calcSurfBez(grid, 5, 5, 50, 50);
-        float cB[]={0.5,0.5,0.f};
-        drawSurfReg(otherGrid, 50, 50, cB);
+    if (display_surface_reglee) {
+        Point* surface_regle1= calcSurfReg(courbe_bezier1, courbe_bezier2, 10, 10);
+        float blanc[]={1.f,1.f,1.f};
+        float jaune[]={0.5,0.5,0.f};
+        drawCurve(courbe_bezier1, 10, blanc);
+        drawCurve(courbe_bezier2, 10, blanc);
+        drawSurfReg(surface_regle1, 10, 10, jaune);
+    }
+    if (display_surface_bezier) {
+        Point* surface_bezier1= calcSurfBez(grid,5,5, 10, 10);
+        float blanc[]={1.f,1.f,1.f};
+        float jaune[]={0.5,0.5,0.f};
+        drawSurfReg(grid, 5, 5, blanc);
+        drawSurfReg(surface_bezier1, 10, 10, jaune);
     }
 
     if (displayMode == SOLID || displayMode == LIGHTED_WIRE) {
@@ -617,10 +629,10 @@ void draw() {
         glPolygonOffset(-2.0, 1.0);
 
         glColor3f(0., 0., 0.);
-        if (display_mesh) {
+        if (display_surface_cylindrique) {
             drawMesh(mesh);
         }
-        if (display_transformed_mesh) {
+        if (display_surface_reglee) {
             drawMesh(transformed_mesh);
         }
 
@@ -631,10 +643,10 @@ void draw() {
     glDisable(GL_LIGHTING);
     if (display_normals) {
         glColor3f(1., 0., 0.);
-        if (display_mesh) {
+        if (display_surface_cylindrique) {
             drawNormals(mesh);
         }
-        if (display_transformed_mesh) {
+        if (display_surface_reglee) {
             drawNormals(transformed_mesh);
         }
     }
@@ -673,6 +685,9 @@ void idle() {
 //Keyboard event
 void key(unsigned char keyPressed, int x, int y) {
     switch (keyPressed) {
+    case 'r':
+        grid=genGrid(5,5);
+        break;
     case '+':
         //NbP++;
         break;
@@ -693,23 +708,17 @@ void key(unsigned char keyPressed, int x, int y) {
     case 'w': //Change le mode d'affichage
         changeDisplayMode();
         break;
-
-    case 'n': //Press n key to display normals
-        display_normals = !display_normals;
-        break;
-
     case '1': //Toggle loaded mesh display
-        display_mesh = !display_mesh;
+        display_surface_cylindrique = !display_surface_cylindrique;
         break;
 
     case '2': //Toggle transformed mesh display
-        display_transformed_mesh = !display_transformed_mesh;
+        display_surface_reglee = !display_surface_reglee;
         break;
 
-    case 's': //Switches between face normals and vertices normals
-        display_smooth_normals = !display_smooth_normals;
+    case '3': //Toggle transformed mesh display
+        display_surface_bezier = !display_surface_bezier;
         break;
-
     default:
         break;
     }
